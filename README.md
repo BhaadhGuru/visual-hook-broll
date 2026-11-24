@@ -80,7 +80,8 @@ Copy `config.example.json` to `config.json` (or run `python -m src.setup_detect 
 .\scripts\install_scheduled_task.ps1
 ```
 
-#### 5. Connect WhatsApp via n8n or Make.com
+#### 5. Connect WhatsApp (Local Baileys QR Bridge, n8n, or Make.com)
+- **Local Baileys WhatsApp QR Bridge (No cloud webhook needed):** Double-click `START_WHATSAPP_BRIDGE.bat` (launches `C:\Projects\whatsapp-reel-workflow\bridge.mjs`) and text `broll: <script>`, `#broll #vertical <script>`, or `#news <script>` directly to your WhatsApp chat.
 - **n8n:** Import `workflows/n8n_whatsapp_broll_workflow.json` and fill in your WhatsApp Phone Number ID + `BrollInput` / `BrollOutput` Google Drive folder IDs.
 - **Make.com:** Follow `workflows/MAKE_COM_SETUP.md` (2-scenario setup mirroring `YapInput`/`YapOutput`).
 

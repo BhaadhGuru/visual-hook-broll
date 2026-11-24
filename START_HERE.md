@@ -19,8 +19,11 @@ Turn WhatsApp scripts into **Visual Hook B-Roll Storyboards** (Ollama + ComfyUI 
      - **Split-file Flux** (`UNETLoader` + `DualCLIPLoader` + `VAELoader`)
      - **GGUF Flux** (`UnetLoaderGGUF` + `DualCLIPLoader` + `VAELoader`)
    - Writes `config.json`, runs offline unit tests, checks live health, and asks if you want Windows logon auto-start.
-3. **Double-click `START_BROLL.bat`**
-   - Starts `src/worker.py` watching `BrollInput\` for incoming `.json` or `.txt` scripts.
+3. **Double-click `START_BROLL.bat`** (Drive folder watcher) **or `START_WHATSAPP_BRIDGE.bat`** (Local Baileys WhatsApp QR Bridge — no n8n/Make or Drive sync needed):
+   - **`START_BROLL.bat`**: starts `src/worker.py` watching `BrollInput\` for incoming `.json` or `.txt` scripts.
+   - **`START_WHATSAPP_BRIDGE.bat`**: starts your local Baileys WhatsApp QR Bridge (`C:\Projects\whatsapp-reel-workflow\bridge.mjs`) and replies directly in WhatsApp when you send:
+     - `broll: <your script>` or `#broll <your script>` (also `#vertical`, `#shots=6`, `#noimages`)
+     - `#news <VO/SOT script>` (News B-Roll & SOT Engine)
 
 ---
 

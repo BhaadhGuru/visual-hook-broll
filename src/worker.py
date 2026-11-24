@@ -17,10 +17,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import AppConfig, load_config
+from .news_engine import run_news_package
 from .pipeline import run_job
 
 
 SUPPORTED_SUFFIXES = {".json", ".txt"}
+
+
+def _is_news_script(text: str) -> bool:
+    return "#news" in text.lower()
 
 
 def _is_file_stable(path: Path, wait_seconds: float = 0.4) -> bool:
@@ -73,15 +78,26 @@ def process_once(cfg: AppConfig, *, mock_comfy: bool = False) -> int:
         print(f"[worker] Picked up {path.name}")
         try:
             job_id, script_text, sender, chat_id, message_id = _load_incoming_job(path)
-            result = run_job(
-                job_id=job_id,
-                script_text=script_text,
-                cfg=cfg,
-                sender=sender,
-                chat_id=chat_id,
-                message_id=message_id,
-                mock_comfy=mock_comfy,
-            )
+            if _is_news_script(script_text):
+                result = run_news_package(
+                    package_id=job_id,
+                    script_text=script_text,
+                    cfg=cfg,
+                    sender=sender,
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    prompts_only=not cfg.news_engine.auto_run_veo,
+                )
+            else:
+                result = run_job(
+                    job_id=job_id,
+                    script_text=script_text,
+                    cfg=cfg,
+                    sender=sender,
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    mock_comfy=mock_comfy,
+                )
             dest = cfg.archive_dir / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{path.name}"
             shutil.move(str(path), str(dest))
             print(f"[worker] Completed {result['job_id']} -> {cfg.output_dir}")

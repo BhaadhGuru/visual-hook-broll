@@ -41,6 +41,23 @@ class StoryboardConfig:
 
 
 @dataclass
+class NewsEngineConfig:
+    veo_provider: str = "vertex"
+    veo_model: str = "veo-3.1-fast-generate-001"
+    resolution: str = "1080p"
+    aspect_ratio: str = "16:9"
+    veo_duration_seconds: int = 8
+    veo_generate_audio: bool = False
+    fps: float = 29.97
+    default_pacing_seconds: float = 4.0
+    vertex_project_id: str = ""
+    vertex_location: str = "us-central1"
+    resolve_watch_dir: Path = Path("./ResolveWatch")
+    yap_output_dir: Path = Path("./YapOutput")
+    auto_run_veo: bool = False
+
+
+@dataclass
 class AppConfig:
     input_dir: Path = Path("./BrollInput")
     output_dir: Path = Path("./BrollOutput")
@@ -50,6 +67,7 @@ class AppConfig:
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     comfyui: ComfyUIConfig = field(default_factory=ComfyUIConfig)
     storyboard: StoryboardConfig = field(default_factory=StoryboardConfig)
+    news_engine: NewsEngineConfig = field(default_factory=NewsEngineConfig)
 
     def resolve_workflow_path(self) -> Path:
         candidate = Path(self.comfyui.workflow_template)
@@ -75,6 +93,7 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
     ollama_raw = raw.get("ollama", {})
     comfy_raw = raw.get("comfyui", {})
     sb_raw = raw.get("storyboard", {})
+    news_raw = raw.get("news_engine", {})
 
     ollama_cfg = OllamaConfig(
         base_url=os.environ.get("OLLAMA_BASE_URL", ollama_raw.get("base_url", "http://127.0.0.1:11434")),
@@ -109,6 +128,24 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         include_individual_panels=bool(sb_raw.get("include_individual_panels", True)),
     )
 
+    news_cfg = NewsEngineConfig(
+        veo_provider=os.environ.get("VEO_PROVIDER", news_raw.get("veo_provider", "vertex")),
+        veo_model=os.environ.get("VEO_MODEL", news_raw.get("veo_model", "veo-3.1-fast-generate-001")),
+        resolution=news_raw.get("resolution", "1080p"),
+        aspect_ratio=news_raw.get("aspect_ratio", "16:9"),
+        veo_duration_seconds=int(news_raw.get("veo_duration_seconds", 8)),
+        veo_generate_audio=bool(news_raw.get("veo_generate_audio", False)),
+        fps=float(news_raw.get("fps", 29.97)),
+        default_pacing_seconds=float(news_raw.get("default_pacing_seconds", 4.0)),
+        vertex_project_id=os.environ.get("VERTEX_PROJECT_ID", news_raw.get("vertex_project_id", "")),
+        vertex_location=os.environ.get("VERTEX_LOCATION", news_raw.get("vertex_location", "us-central1")),
+        resolve_watch_dir=Path(
+            os.environ.get("RESOLVE_WATCH_DIR", news_raw.get("resolve_watch_dir", "./ResolveWatch"))
+        ),
+        yap_output_dir=Path(os.environ.get("YAP_OUTPUT_DIR", news_raw.get("yap_output_dir", "./YapOutput"))),
+        auto_run_veo=bool(news_raw.get("auto_run_veo", False)),
+    )
+
     input_dir = Path(os.environ.get("BROLL_INPUT_DIR", raw.get("input_dir", "./BrollInput")))
     output_dir = Path(os.environ.get("BROLL_OUTPUT_DIR", raw.get("output_dir", "./BrollOutput")))
     archive_dir = Path(os.environ.get("BROLL_ARCHIVE_DIR", raw.get("archive_dir", str(input_dir / "_processed"))))
@@ -122,4 +159,5 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         ollama=ollama_cfg,
         comfyui=comfy_cfg,
         storyboard=sb_cfg,
+        news_engine=news_cfg,
     )

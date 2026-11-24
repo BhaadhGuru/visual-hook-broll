@@ -84,6 +84,31 @@ Include any hashtag anywhere in the script you text to WhatsApp:
 | `#horizontal` / `#16:9` | Renders landscape 16:9 commercial frames (`1024×576`, default) |
 | `#shots=6` | Generates a 6-panel (3×2) storyboard instead of 4-panel (2×2) |
 | `#noimages` | Fast text-only mode — skips ComfyUI Flux and sends only the shot list |
+| `#news` | Routes script to the **News B-Roll & SOT Engine** (VO/SOT segmentation, Sony FX9 Veo 3.1 prompts, DaVinci Resolve markers) |
+
+---
+
+## News B-Roll & SOT Engine (VO / SOT / Veo 3.1 / Yap Merge)
+
+Built directly alongside the visual-hook generator for broadcast news packages:
+
+1. **Stage 1 — Script Segmenter (`src/news_segmenter.py`):** Local Ollama extracts objective physical-action 3–5s news shots from raw `VO` / `SOT` / `STANDUP` scripts into structured JSON (`shot_index`, `segment_type`, `suggested_filename`, `visual_description`).
+2. **Stage 2 — Camera & Style Anchor:** Automatically wraps every shot in the Sony FX9 / 35mm handheld shoulder-mount / Neutral Rec.709 broadcast continuity prompt.
+3. **Stage 3 — Veo 3.1 Batch & Yap/Resolve Merge (`src/veo_client.py`, `src/yap_merge.py`, `src/news_engine.py`):**
+   - Renders pre-numbered `.mp4` clips (`01_Suburban_Street.mp4`, ...) via **Veo 3.1** (supports **Vertex AI GA** `veo-3.1-fast-generate-001` / `veo-3.1-generate-001` — note that Gemini API preview IDs retired Oct 22, 2026 — plus optional `--ref-image` for color/lighting continuity and `--resume` to never re-bill existing clips).
+   - Maps `shot_index` and `suggested_filename` directly onto Yap audio markers (`.json`, `.srt`, or `.vtt`) and stages clips, Yap audio tracks, `resolve_markers.json` (`resolve_markers.py`-compatible: `Green` = VO, `Cyan` = SOT), and `resolve_markers.csv` into your DaVinci Resolve watched folder.
+
+```bash
+# Dry run: generate Sony FX9 Veo prompts + DaVinci Resolve markers (no video credits spent)
+python -m src.news_engine examples/news_pkg_water_main.txt --prompts-only
+
+# Full run with Yap markers, reference still, and Resolve watched folder
+python -m src.news_engine examples/news_pkg_water_main.txt \
+  --yap-markers "G:\My Drive\YapOutput\pkg_markers.json" \
+  --yap-audio-dir "G:\My Drive\YapOutput\audio" \
+  --ref-image "C:\Projects\refs\fx9_daylight_still.jpg" \
+  --resolve-dir "D:\ResolveWatch\NewsPackages"
+```
 
 ---
 
@@ -98,8 +123,11 @@ Running an Ollama LLM and ComfyUI Flux on the same Windows GPU will normally CUD
 ## CLI Usage & Automated Tests
 
 ```bash
-# Run a single script directly from CLI (add --mock-comfy to test without ComfyUI)
+# Run a single visual-hook script directly from CLI (add --mock-comfy to test without ComfyUI)
 python -m src.pipeline examples/ama_techtel_card_reader.txt --mock-comfy
+
+# Run a broadcast news VO/SOT package (prompts + Resolve markers only)
+python -m src.news_engine examples/news_pkg_water_main.txt --prompts-only
 
 # Run the full unit test suite
 python -m unittest discover -s tests -v

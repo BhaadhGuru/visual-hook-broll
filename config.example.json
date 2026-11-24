@@ -28,5 +28,20 @@
     "panel_width": 960,
     "panel_height": 540,
     "include_individual_panels": true
+  },
+  "news_engine": {
+    "veo_provider": "vertex",
+    "veo_model": "veo-3.1-fast-generate-001",
+    "resolution": "1080p",
+    "aspect_ratio": "16:9",
+    "veo_duration_seconds": 8,
+    "veo_generate_audio": false,
+    "fps": 29.97,
+    "default_pacing_seconds": 4.0,
+    "vertex_project_id": "",
+    "vertex_location": "us-central1",
+    "resolve_watch_dir": "D:\\ResolveWatch\\NewsPackages",
+    "yap_output_dir": "G:\\My Drive\\YapOutput",
+    "auto_run_veo": false
   }
 }

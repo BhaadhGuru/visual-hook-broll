@@ -1,0 +1,226 @@
+{
+  "name": "WhatsApp Visual Hook B-Roll Generator (BrollInput <-> BrollOutput)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["messages"]
+      },
+      "id": "wa-trigger-in",
+      "name": "1. WhatsApp Trigger (Incoming Script)",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [220, 220]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json.messages?.[0] || $input.first().json;\nconst text = (msg.text?.body || msg.body || '').trim();\nconst sender = msg.from || '';\nconst messageId = msg.id || String(Date.now());\nconst jobId = `wa_${Date.now()}_${messageId.slice(-6).replace(/[^a-zA-Z0-9]/g, '')}`;\n\nif (!text) {\n  return [];\n}\n\nconst payload = {\n  job_id: jobId,\n  sender,\n  chat_id: sender,\n  message_id: messageId,\n  script: text,\n  created_at: new Date().toISOString()\n};\n\nreturn [{\n  json: payload,\n  binary: {\n    data: {\n      data: Buffer.from(JSON.stringify(payload, null, 2), 'utf8').toString('base64'),\n      mimeType: 'application/json',\n      fileName: `${jobId}.json`\n    }\n  }\n}];"
+      },
+      "id": "build-job-json",
+      "name": "2. Package Script Job JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 220]
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.job_id }}.json",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "REPLACE_WITH_BROLL_INPUT_FOLDER_ID"
+        },
+        "options": {}
+      },
+      "id": "gdrive-upload-in",
+      "name": "3. Drop Job into Drive (BrollInput)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [740, 220]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "REPLACE_WITH_WA_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $('2. Package Script Job JSON').item.json.sender }}",
+        "textBody": "🎬 Script received! Generating your Visual Hook & Curiosity-Loop B-Roll shot list + Flux storyboard on your Windows GPU..."
+      },
+      "id": "wa-ack",
+      "name": "4. Send WhatsApp Ack",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1000, 220]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "mode": "id",
+          "value": "REPLACE_WITH_BROLL_OUTPUT_FOLDER_ID"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "id": "gdrive-trigger-out",
+      "name": "5. Watch Drive (BrollOutput)",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [220, 520]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.name }}",
+              "operation": "endsWith",
+              "value2": "_result.json"
+            }
+          ]
+        }
+      },
+      "id": "filter-result-json",
+      "name": "6. Only *_result.json",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 520]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        }
+      },
+      "id": "download-result-json",
+      "name": "7. Download Result JSON",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [700, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "const bin = $input.first().binary.data;\nconst text = Buffer.from(bin.data, 'base64').toString('utf8');\nconst result = JSON.parse(text);\nreturn [{ json: result }];"
+      },
+      "id": "parse-result-json",
+      "name": "8. Parse Shot List Manifest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 520]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "REPLACE_WITH_WA_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $json.sender }}",
+        "textBody": "={{ $json.whatsapp_message }}"
+      },
+      "id": "wa-send-shotlist",
+      "name": "9. Send WhatsApp Shot List Text",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1200, 440]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "operation": "search",
+        "queryString": "={{ $json.storyboard_filename }}",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "mode": "id",
+            "value": "REPLACE_WITH_BROLL_OUTPUT_FOLDER_ID"
+          }
+        }
+      },
+      "id": "find-storyboard-png",
+      "name": "10. Find Storyboard PNG in BrollOutput",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1200, 620]
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        }
+      },
+      "id": "download-storyboard-png",
+      "name": "11. Download Storyboard PNG",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [1440, 620]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "REPLACE_WITH_WA_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "={{ $('8. Parse Shot List Manifest').item.json.sender }}",
+        "messageType": "image",
+        "mediaPath": "useN8nBinary",
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "={{ $('8. Parse Shot List Manifest').item.json.whatsapp_image_caption }}"
+        }
+      },
+      "id": "wa-send-storyboard",
+      "name": "12. Send WhatsApp Storyboard Image",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [1680, 620]
+    }
+  ],
+  "connections": {
+    "1. WhatsApp Trigger (Incoming Script)": {
+      "main": [[{"node": "2. Package Script Job JSON", "type": "main", "index": 0}]]
+    },
+    "2. Package Script Job JSON": {
+      "main": [[{"node": "3. Drop Job into Drive (BrollInput)", "type": "main", "index": 0}]]
+    },
+    "3. Drop Job into Drive (BrollInput)": {
+      "main": [[{"node": "4. Send WhatsApp Ack", "type": "main", "index": 0}]]
+    },
+    "5. Watch Drive (BrollOutput)": {
+      "main": [[{"node": "6. Only *_result.json", "type": "main", "index": 0}]]
+    },
+    "6. Only *_result.json": {
+      "main": [[{"node": "7. Download Result JSON", "type": "main", "index": 0}]]
+    },
+    "7. Download Result JSON": {
+      "main": [[{"node": "8. Parse Shot List Manifest", "type": "main", "index": 0}]]
+    },
+    "8. Parse Shot List Manifest": {
+      "main": [[
+        {"node": "9. Send WhatsApp Shot List Text", "type": "main", "index": 0},
+        {"node": "10. Find Storyboard PNG in BrollOutput", "type": "main", "index": 0}
+      ]]
+    },
+    "10. Find Storyboard PNG in BrollOutput": {
+      "main": [[{"node": "11. Download Storyboard PNG", "type": "main", "index": 0}]]
+    },
+    "11. Download Storyboard PNG": {
+      "main": [[{"node": "12. Send WhatsApp Storyboard Image", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,13 @@
+Hook, first 3 seconds
+"Card reader stops working mid-rush. What do you do first?"
+
+The tip
+Start the new year with a plan, so a tech hiccup takes ten minutes instead of the whole afternoon.
+First, check the simple stuff. Make sure the card reader is plugged in, the cables are snug, and the screen is on. A loose cord causes more trouble than you'd think.
+Second, check one other device. If your phone or office computer can still get online, the problem is probably just the card reader, not your whole connection.
+Third, restart only the card reader or register. Turn it off, wait thirty seconds, and turn it back on.
+Fourth, have a backup ready. Many payment systems offer an offline mode or a mobile card reader that works from a phone. Set that up now, so you can keep taking payments while you sort things out.
+And finally, keep the numbers for your provider and your point-of-sale company taped right by the register, so nobody is hunting for them while customers wait.
+
+Close
+"That's your Tech Tip Tuesday from AMA TechTel."

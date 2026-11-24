@@ -1,0 +1,32 @@
+{
+  "input_dir": "G:\\My Drive\\BrollInput",
+  "output_dir": "G:\\My Drive\\BrollOutput",
+  "archive_dir": "G:\\My Drive\\BrollInput\\_processed",
+  "poll_interval_seconds": 3.0,
+  "ollama": {
+    "base_url": "http://127.0.0.1:11434",
+    "model": "qwen2.5:14b",
+    "timeout_seconds": 180,
+    "temperature": 0.4,
+    "unload_after_generation": true
+  },
+  "comfyui": {
+    "base_url": "http://127.0.0.1:8188",
+    "workflow_template": "comfyui_workflows/flux_dev_fp8_api.json",
+    "checkpoint_name": "flux1-dev-fp8.safetensors",
+    "width": 1024,
+    "height": 576,
+    "steps": 20,
+    "cfg": 1.0,
+    "guidance": 3.5,
+    "timeout_seconds": 300,
+    "free_vram_after_job": true
+  },
+  "storyboard": {
+    "default_panel_count": 4,
+    "grid_columns": 2,
+    "panel_width": 960,
+    "panel_height": 540,
+    "include_individual_panels": true
+  }
+}

@@ -1,0 +1,43 @@
+🎬 *AMA TechTel — Tech Tip Tuesday: Card Reader Down*
+📐 Aspect: 16:9 | Panels: 4
+
+⚡ *0–3s Visual Hook:*
+Card reader dies mid-rush — open straight on urgent hands checking snug power & data cords so viewers stop scrolling immediately.
+
+🔁 *Curiosity Loop Arc:*
+Tension (dead reader mid-rush) -> Isolation (phone still online, so it's just the terminal) -> Action & Suspense (00:30 power-cycle countdown) -> Relief & Payoff (mobile tap backup + taped support number on register).
+
+━━━━━━━━━━━━━━━━━━━━
+📸 *PHOTOG VISUAL SHOT LIST*
+━━━━━━━━━━━━━━━━━━━━
+
+*Hook 1 (Top-Left)* — _0-3s Visual Hook_
+• *Shoot:* Up-close of hands checking that power & ethernet cables are plugged snugly into the card reader and tilting terminal to confirm the screen powers on.
+• *Framing / Lens:* Extreme Close-Up (50mm f/2.8)
+• *Camera Move:* Handheld tight push-in with brisk, mid-rush energy
+• *Props / Light:* Matte-black EMV reader, snug black cords, warm counter practicals, blurred customers behind
+• *Covers Line:* "Card reader stops working mid-rush. First, check the simple stuff — cables snug, screen on."
+
+*Hook 2 (Top-Right)* — _Curiosity / Isolation_
+• *Shoot:* Over-the-shoulder of employee checking smartphone showing active Wi-Fi 'Connected' status while the countertop card reader stays dormant and blank beside the POS.
+• *Framing / Lens:* Over-the-Shoulder MCU (35mm f/2.8)
+• *Camera Move:* Subtle rack focus from dormant blank card reader to lit phone screen
+• *Props / Light:* Smartphone displaying Wi-Fi Connected, dormant blank-screen card reader on wood counter
+• *Covers Line:* "Second, check one other device. If your phone can still get online, it's just the card reader."
+
+*Hook 3 (Bottom-Left)* — _Action & Wait Loop_
+• *Shoot:* One hand powers down the card reader while the other hand holds a phone/watch in foreground showing a crisp 00:30 countdown timer waiting to reboot.
+• *Framing / Lens:* Tight Insert Close-Up (50mm f/2.8)
+• *Camera Move:* Locked-off handheld micro-drift holding both terminal and 00:30 timer sharp
+• *Props / Light:* Card reader power button, smartphone/watch set to 00:30 countdown timer
+• *Covers Line:* "Third, restart only the card reader or register. Turn it off, wait thirty seconds, turn it back on."
+
+*Hook 4 & 5 (Bottom-Right)* — _Backup & Payoff CTA_
+• *Shoot:* Prepping a compact wireless mobile fallback reader beside smartphone while a printed 'SUPPORT / 1-800-555-0199' strip is taped cleanly onto the POS register bezel.
+• *Framing / Lens:* Medium Close-Up (35mm f/2.8)
+• *Camera Move:* Smooth lateral slide from mobile backup reader across to taped support label
+• *Props / Light:* Pocket wireless tap reader, smartphone, clear-taped 'SUPPORT / 1-800-555-0199' strip on POS
+• *Covers Line:* "Have a mobile card reader backup ready, and keep provider & POS support numbers taped right by the register."
+
+🧰 *On-Set Notes & Consistency Lock:*
+Shoot at one real retail/cafe checkout counter during soft bustle. Lenses: 35mm + 50mm f/2.8. Practical props: matte-black EMV terminal, smartphone with Wi-Fi settings & 00:30 timer, compact wireless tap reader, clear Scotch tape + printed 'SUPPORT / 1-800-555-0199' strip.

@@ -1,0 +1,57 @@
+{
+  "title": "AMA TechTel \u2014 Tech Tip Tuesday: Card Reader Down",
+  "hook_0_3s_concept": "Card reader dies mid-rush \u2014 open straight on urgent hands checking snug power & data cords so viewers stop scrolling immediately.",
+  "curiosity_loop_strategy": "Tension (dead reader mid-rush) -> Isolation (phone still online, so it's just the terminal) -> Action & Suspense (00:30 power-cycle countdown) -> Relief & Payoff (mobile tap backup + taped support number on register).",
+  "consistency_lock": "Warm wooden small-business checkout counter, matte-black countertop EMV card reader beside POS register, warm overhead pendant lights, softly blurred busy shop interior, natural commercial B-roll color grade, 35-50mm f/2.8 shallow depth of field.",
+  "gear_and_location_notes": "Shoot at one real retail/cafe checkout counter during soft bustle. Lenses: 35mm + 50mm f/2.8. Practical props: matte-black EMV terminal, smartphone with Wi-Fi settings & 00:30 timer, compact wireless tap reader, clear Scotch tape + printed 'SUPPORT / 1-800-555-0199' strip.",
+  "shots": [
+    {
+      "panel_index": 1,
+      "panel_position": "Top-Left",
+      "shot_label": "Hook 1",
+      "curiosity_role": "0-3s Visual Hook",
+      "script_beat": "Card reader stops working mid-rush. First, check the simple stuff \u2014 cables snug, screen on.",
+      "visual_instruction": "Up-close of hands checking that power & ethernet cables are plugged snugly into the card reader and tilting terminal to confirm the screen powers on.",
+      "framing_and_lens": "Extreme Close-Up (50mm f/2.8)",
+      "camera_movement": "Handheld tight push-in with brisk, mid-rush energy",
+      "lighting_and_props": "Matte-black EMV reader, snug black cords, warm counter practicals, blurred customers behind",
+      "flux_prompt": "Photorealistic commercial B-roll still, 50mm f/2.8. Tight close-up of retail employee's hands checking power and ethernet cables snugly into matte-black countertop EMV card reader on warm wood counter, screen lighting up, blurred cafe background."
+    },
+    {
+      "panel_index": 2,
+      "panel_position": "Top-Right",
+      "shot_label": "Hook 2",
+      "curiosity_role": "Curiosity / Isolation",
+      "script_beat": "Second, check one other device. If your phone can still get online, it's just the card reader.",
+      "visual_instruction": "Over-the-shoulder of employee checking smartphone showing active Wi-Fi 'Connected' status while the countertop card reader stays dormant and blank beside the POS.",
+      "framing_and_lens": "Over-the-Shoulder MCU (35mm f/2.8)",
+      "camera_movement": "Subtle rack focus from dormant blank card reader to lit phone screen",
+      "lighting_and_props": "Smartphone displaying Wi-Fi Connected, dormant blank-screen card reader on wood counter",
+      "flux_prompt": "Photorealistic commercial B-roll still, 35mm f/2.8. Over-the-shoulder medium close-up at warm wood checkout counter: employee holds smartphone showing Wi-Fi Connected while dormant matte-black EMV card reader sits blank beside POS."
+    },
+    {
+      "panel_index": 3,
+      "panel_position": "Bottom-Left",
+      "shot_label": "Hook 3",
+      "curiosity_role": "Action & Wait Loop",
+      "script_beat": "Third, restart only the card reader or register. Turn it off, wait thirty seconds, turn it back on.",
+      "visual_instruction": "One hand powers down the card reader while the other hand holds a phone/watch in foreground showing a crisp 00:30 countdown timer waiting to reboot.",
+      "framing_and_lens": "Tight Insert Close-Up (50mm f/2.8)",
+      "camera_movement": "Locked-off handheld micro-drift holding both terminal and 00:30 timer sharp",
+      "lighting_and_props": "Card reader power button, smartphone/watch set to 00:30 countdown timer",
+      "flux_prompt": "Photorealistic commercial B-roll still, 50mm f/2.8. Close-up at warm wood counter: one hand powers down matte-black EMV card reader while other hand holds phone in foreground showing clean 00:30 countdown timer."
+    },
+    {
+      "panel_index": 4,
+      "panel_position": "Bottom-Right",
+      "shot_label": "Hook 4 & 5",
+      "curiosity_role": "Backup & Payoff CTA",
+      "script_beat": "Have a mobile card reader backup ready, and keep provider & POS support numbers taped right by the register.",
+      "visual_instruction": "Prepping a compact wireless mobile fallback reader beside smartphone while a printed 'SUPPORT / 1-800-555-0199' strip is taped cleanly onto the POS register bezel.",
+      "framing_and_lens": "Medium Close-Up (35mm f/2.8)",
+      "camera_movement": "Smooth lateral slide from mobile backup reader across to taped support label",
+      "lighting_and_props": "Pocket wireless tap reader, smartphone, clear-taped 'SUPPORT / 1-800-555-0199' strip on POS",
+      "flux_prompt": "Photorealistic commercial B-roll still, 35mm f/2.8. Medium close-up at warm wood counter: employee sets compact white mobile tap card reader next to phone, while 'SUPPORT / 1-800-555-0199' is taped cleanly onto POS register bezel."
+    }
+  ]
+}

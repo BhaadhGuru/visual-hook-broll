@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local config & secrets
+config.json
+.env
+.env.*
+
+# Runtime input/output folders
+BrollInput/
+BrollOutput/
+*.tmp
+*.log

@@ -28,6 +28,11 @@ def render_workflow_template(
     guidance: float,
     checkpoint_name: str,
     filename_prefix: str,
+    unet_name: str = "",
+    weight_dtype: str = "fp8_e4m3fn",
+    clip_l_name: str = "clip_l.safetensors",
+    t5_name: str = "t5xxl_fp8_e4m3fn.safetensors",
+    vae_name: str = "ae.safetensors",
 ) -> dict[str, Any]:
     """Deep-substitute placeholder tokens inside an exported ComfyUI API workflow dict."""
     replacements: dict[str, Any] = {
@@ -39,6 +44,11 @@ def render_workflow_template(
         "{{CFG}}": cfg,
         "{{GUIDANCE}}": guidance,
         "{{CHECKPOINT}}": checkpoint_name,
+        "{{UNET}}": unet_name,
+        "{{WEIGHT_DTYPE}}": weight_dtype,
+        "{{CLIP_L}}": clip_l_name,
+        "{{T5}}": t5_name,
+        "{{VAE}}": vae_name,
         "{{FILENAME_PREFIX}}": filename_prefix,
     }
 
@@ -117,6 +127,11 @@ class ComfyUIClient:
             guidance=self.cfg.guidance,
             checkpoint_name=self.cfg.checkpoint_name,
             filename_prefix=filename_prefix,
+            unet_name=self.cfg.unet_name,
+            weight_dtype=self.cfg.weight_dtype,
+            clip_l_name=self.cfg.clip_l_name,
+            t5_name=self.cfg.t5_name,
+            vae_name=self.cfg.vae_name,
         )
 
         queued = self._request_json(

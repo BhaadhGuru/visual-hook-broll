@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Preflight health check for local Ollama, ComfyUI Flux, and Google Drive BrollInput/BrollOutput folders.
 #>
@@ -40,10 +40,13 @@ try {
 }
 
 # 3. ComfyUI
+$activeModel = if ($cfg.comfyui.unet_name) { $cfg.comfyui.unet_name } else { $cfg.comfyui.checkpoint_name }
+Write-Host "[INFO] ComfyUI workflow -> $($cfg.comfyui.workflow_template) (model: $activeModel)" -ForegroundColor Cyan
+
 $comfyUrl = "$($cfg.comfyui.base_url.TrimEnd('/'))/system_stats"
 try {
     $stats = Invoke-RestMethod -Uri $comfyUrl -TimeoutSec 5
-    $gpu = $stats.devices[0].name
+    $gpu = if ($stats.devices -and $stats.devices.Count -gt 0) { $stats.devices[0].name } else { "GPU detected" }
     Write-Host "[OK]   ComfyUI reachable ($gpu)" -ForegroundColor Green
 } catch {
     Write-Host "[FAIL] ComfyUI not reachable at $comfyUrl — launch ComfyUI with --listen 127.0.0.1 --port 8188." -ForegroundColor Red

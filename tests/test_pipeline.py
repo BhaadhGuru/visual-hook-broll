@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,7 +12,7 @@ from unittest.mock import patch
 from PIL import Image
 
 from src.comfy_client import render_workflow_template
-from src.config import AppConfig, ComfyUIConfig, OllamaConfig, StoryboardConfig
+from src.config import AppConfig, ComfyUIConfig, OllamaConfig, StoryboardConfig, load_config
 from src.director import ShotListPlan, ShotPanel, parse_script_directives
 from src.formatter import (
     format_markdown_shoot_card,
@@ -115,6 +116,98 @@ class TestVisualHookBroll(unittest.TestCase):
         self.assertEqual(rendered["35"]["inputs"]["guidance"], 3.5)
         self.assertIsInstance(rendered["35"]["inputs"]["guidance"], float)
         self.assertEqual(rendered["6"]["inputs"]["text"], "Hands plugging card reader cables")
+
+    def test_split_and_gguf_comfy_templates_and_config_env_overrides(self) -> None:
+        workflows_dir = Path(__file__).resolve().parent.parent / "comfyui_workflows"
+
+        split_tpl = json.loads((workflows_dir / "flux_unet_dualclip_api.json").read_text(encoding="utf-8"))
+        rendered_split = render_workflow_template(
+            split_tpl,
+            prompt_text="Close-up technician hands",
+            seed=777,
+            width=1024,
+            height=576,
+            steps=20,
+            cfg=1.0,
+            guidance=3.5,
+            checkpoint_name="",
+            filename_prefix="split_p01",
+            unet_name="flux1-dev-fp8.safetensors",
+            weight_dtype="fp8_e4m3fn",
+            clip_l_name="clip_l.safetensors",
+            t5_name="t5xxl_fp8_e4m3fn.safetensors",
+            vae_name="ae.safetensors",
+        )
+        self.assertEqual(rendered_split["12"]["class_type"], "UNETLoader")
+        self.assertEqual(rendered_split["12"]["inputs"]["unet_name"], "flux1-dev-fp8.safetensors")
+        self.assertEqual(rendered_split["12"]["inputs"]["weight_dtype"], "fp8_e4m3fn")
+        self.assertEqual(rendered_split["11"]["inputs"]["clip_name1"], "t5xxl_fp8_e4m3fn.safetensors")
+        self.assertEqual(rendered_split["11"]["inputs"]["clip_name2"], "clip_l.safetensors")
+        self.assertEqual(rendered_split["10"]["inputs"]["vae_name"], "ae.safetensors")
+        self.assertEqual(rendered_split["3"]["inputs"]["seed"], 777)
+
+        gguf_tpl = json.loads((workflows_dir / "flux_gguf_api.json").read_text(encoding="utf-8"))
+        rendered_gguf = render_workflow_template(
+            gguf_tpl,
+            prompt_text="Close-up technician hands",
+            seed=888,
+            width=768,
+            height=1024,
+            steps=20,
+            cfg=1.0,
+            guidance=3.5,
+            checkpoint_name="",
+            filename_prefix="gguf_p01",
+            unet_name="flux1-dev-Q4_K_S.gguf",
+            clip_l_name="clip_l.safetensors",
+            t5_name="t5xxl_fp8_e4m3fn.safetensors",
+            vae_name="ae.safetensors",
+        )
+        self.assertEqual(rendered_gguf["12"]["class_type"], "UnetLoaderGGUF")
+        self.assertEqual(rendered_gguf["12"]["inputs"]["unet_name"], "flux1-dev-Q4_K_S.gguf")
+        self.assertNotIn("weight_dtype", rendered_gguf["12"]["inputs"])
+        self.assertEqual(rendered_gguf["5"]["inputs"]["width"], 768)
+        self.assertEqual(rendered_gguf["5"]["inputs"]["height"], 1024)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cfg_file = Path(tmpdir) / "config.json"
+            cfg_file.write_text(
+                json.dumps(
+                    {
+                        "comfyui": {
+                            "unet_name": "from-file.gguf",
+                            "weight_dtype": "default",
+                            "clip_l_name": "file_clip_l.safetensors",
+                            "t5_name": "file_t5.safetensors",
+                            "vae_name": "file_ae.safetensors",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            loaded = load_config(cfg_file)
+            self.assertEqual(loaded.comfyui.unet_name, "from-file.gguf")
+            self.assertEqual(loaded.comfyui.weight_dtype, "default")
+            self.assertEqual(loaded.comfyui.clip_l_name, "file_clip_l.safetensors")
+            self.assertEqual(loaded.comfyui.t5_name, "file_t5.safetensors")
+            self.assertEqual(loaded.comfyui.vae_name, "file_ae.safetensors")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "FLUX_UNET": "env-override.gguf",
+                    "FLUX_WEIGHT_DTYPE": "fp8_e5m2",
+                    "FLUX_CLIP_L": "env_clip_l.safetensors",
+                    "FLUX_T5": "env_t5.safetensors",
+                    "FLUX_VAE": "env_ae.safetensors",
+                },
+            ):
+                loaded_env = load_config(cfg_file)
+            self.assertEqual(loaded_env.comfyui.unet_name, "env-override.gguf")
+            self.assertEqual(loaded_env.comfyui.weight_dtype, "fp8_e5m2")
+            self.assertEqual(loaded_env.comfyui.clip_l_name, "env_clip_l.safetensors")
+            self.assertEqual(loaded_env.comfyui.t5_name, "env_t5.safetensors")
+            self.assertEqual(loaded_env.comfyui.vae_name, "env_ae.safetensors")
 
     def test_formatters_include_all_photog_fields(self) -> None:
         plan = _sample_plan()

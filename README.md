@@ -1,6 +1,7 @@
 # Visual Hook & Curiosity-Loop B-Roll Shot List Generator
 
 > **Need the quick daily operating reference?** See **[ONE_SHEET.md](ONE_SHEET.md)**.
+> **New to this Windows machine?** Start with **[START_HERE.md](START_HERE.md)** (double-click `SETUP.bat`, then `START_BROLL.bat`).
 
 A **100% local Windows GPU** pipeline that mirrors your `YapInput` / `YapOutput` Google Drive + WhatsApp automation — built specifically to turn any raw script texted over WhatsApp into:
 
@@ -43,25 +44,34 @@ n8n OR Make.com (Watches BrollOutput/ for *_result.json)
 
 ## Quick Start on Windows
 
-### 1. Create the two Google Drive folders
+### Zero-Config 2-Double-Click Setup (Recommended)
+1. Start **Google Drive for Desktop**, **Ollama**, and **ComfyUI** (`--listen 127.0.0.1 --port 8188`).
+2. Double-click **`SETUP.bat`** — creates `.venv`, installs Pillow, auto-detects `G:\My Drive\BrollInput` / `BrollOutput`, picks your best installed Ollama text model, auto-detects single-file / split (`UNETLoader` + `DualCLIPLoader` + `VAELoader`) / GGUF (`UnetLoaderGGUF`) Flux models, writes `config.json`, and runs self-tests.
+3. Double-click **`START_BROLL.bat`** — launches the local GPU folder watcher.
+
+See **[START_HERE.md](START_HERE.md)** for full details and 8 GB VRAM tips.
+
+### Manual Setup (Optional)
+
+#### 1. Create the two Google Drive folders
 Create `BrollInput` and `BrollOutput` in Google Drive (right next to `YapInput` / `YapOutput`) and make sure Google Drive for Desktop (`G:\My Drive\...`) or your `rclone` sync mounts them locally.
 
-### 2. Configure local paths & models
-Copy `config.example.json` to `config.json` and edit:
+#### 2. Configure local paths & models
+Copy `config.example.json` to `config.json` (or run `python -m src.setup_detect --create-dirs`) and verify:
 - `input_dir` / `output_dir` (e.g., `G:\My Drive\BrollInput` and `G:\My Drive\BrollOutput`)
-- `ollama.model` (e.g., `qwen2.5:14b`, `qwen3:14b`, or `llama3.1:8b`)
-- `comfyui.checkpoint_name` (exact filename in your `ComfyUI\models\checkpoints\`)
-- `comfyui.workflow_template` (`comfyui_workflows/flux_dev_fp8_api.json` or `comfyui_workflows/flux_schnell_api.json`)
+- `ollama.model` (e.g., `qwen2.5:14b`, `qwen3:14b`, or `qwen2.5:7b`)
+- `comfyui.workflow_template` (`flux_dev_fp8_api.json`, `flux_schnell_api.json`, `flux_unet_dualclip_api.json`, or `flux_gguf_api.json`)
+- `comfyui.checkpoint_name` (single-file) or `comfyui.unet_name` / `clip_l_name` / `t5_name` / `vae_name` (split-file or GGUF)
 
-> **Using your own custom ComfyUI Flux graph (GGUF, UNETLoader + DualCLIPLoader, LoRAs)?**
+> **Using your own custom ComfyUI Flux graph (LoRAs, custom samplers, etc.)?**
 > In ComfyUI, enable **Dev Mode**, click **Save (API Format)**, drop the JSON into `comfyui_workflows/`, and replace the prompt text, seed, width, height, and filename prefix with `{{PROMPT}}`, `{{SEED}}`, `{{WIDTH}}`, `{{HEIGHT}}`, and `{{FILENAME_PREFIX}}`.
 
-### 3. Verify Ollama + ComfyUI + Drive paths
+#### 3. Verify Ollama + ComfyUI + Drive paths
 ```powershell
 .\scripts\check_health.ps1
 ```
 
-### 4. Start the worker (or install as a Windows logon task)
+#### 4. Start the worker (or install as a Windows logon task)
 ```powershell
 # Run in foreground
 .\scripts\start_worker.ps1
@@ -70,7 +80,7 @@ Copy `config.example.json` to `config.json` and edit:
 .\scripts\install_scheduled_task.ps1
 ```
 
-### 5. Connect WhatsApp via n8n or Make.com
+#### 5. Connect WhatsApp via n8n or Make.com
 - **n8n:** Import `workflows/n8n_whatsapp_broll_workflow.json` and fill in your WhatsApp Phone Number ID + `BrollInput` / `BrollOutput` Google Drive folder IDs.
 - **Make.com:** Follow `workflows/MAKE_COM_SETUP.md` (2-scenario setup mirroring `YapInput`/`YapOutput`).
 

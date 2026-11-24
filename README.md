@@ -1,5 +1,7 @@
 # Visual Hook & Curiosity-Loop B-Roll Shot List Generator
 
+> **Need the quick daily operating reference?** See **[ONE_SHEET.md](ONE_SHEET.md)**.
+
 A **100% local Windows GPU** pipeline that mirrors your `YapInput` / `YapOutput` Google Drive + WhatsApp automation — built specifically to turn any raw script texted over WhatsApp into:
 
 1. A **Visual Hook (0–3s) & Curiosity-Loop B-Roll Shot List** formatted for WhatsApp (framing, focal length, camera movement, props/lighting, and script beat mapping).

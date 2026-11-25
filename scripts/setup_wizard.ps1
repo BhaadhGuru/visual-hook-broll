@@ -47,20 +47,40 @@ Write-Host ""
 $cfg = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 $updatedExtra = $false
 
+function Resolve-ShortcutTarget([string]$RawPath) {
+    $clean = $RawPath.Trim().Trim('"')
+    if (-not $clean) { return "" }
+    if ($clean.ToLower().EndsWith(".lnk") -and (Test-Path $clean)) {
+        try {
+            $sh = New-Object -ComObject WScript.Shell
+            $sc = $sh.CreateShortcut($clean)
+            if ($sc.Arguments -match '([A-Za-z]:\\[^"]+\.(?:bat|cmd|exe))') {
+                return $Matches[1]
+            }
+            if ($sc.TargetPath) {
+                return $sc.TargetPath
+            }
+        } catch { }
+    }
+    return $clean
+}
+
 if (-not $cfg.watchdog.yap_bat) {
     Write-Host "[3/5] Yap .bat was not found automatically." -ForegroundColor Yellow
-    $yapInput = Read-Host "      Drag & drop your Yap .bat file here (or press Enter to skip for now)"
-    $yapClean = $yapInput.Trim().Trim('"')
+    $yapInput = Read-Host "      Drag & drop your Yap .bat (or Desktop shortcut) here, or press Enter to skip"
+    $yapClean = Resolve-ShortcutTarget $yapInput
     if ($yapClean) {
+        Write-Host "      Resolved Yap -> $yapClean" -ForegroundColor Green
         $cfg.watchdog.yap_bat = $yapClean
         $updatedExtra = $true
     }
 }
 if (-not $cfg.watchdog.mediamtx_bat) {
     Write-Host "[3/5] MediaMTX .bat / .exe was not found automatically." -ForegroundColor Yellow
-    $mtxInput = Read-Host "      Drag & drop your MediaMTX .bat or mediamtx.exe here (or press Enter to skip for now)"
-    $mtxClean = $mtxInput.Trim().Trim('"')
+    $mtxInput = Read-Host "      Drag & drop your MediaMTX .bat / .exe (or Desktop shortcut) here, or press Enter to skip"
+    $mtxClean = Resolve-ShortcutTarget $mtxInput
     if ($mtxClean) {
+        Write-Host "      Resolved MediaMTX -> $mtxClean" -ForegroundColor Green
         $cfg.watchdog.mediamtx_bat = $mtxClean
         $updatedExtra = $true
     }

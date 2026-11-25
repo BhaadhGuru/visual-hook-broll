@@ -18,6 +18,7 @@ from typing import Any
 from .config import load_config
 from .news_engine import run_news_package
 from .pipeline import run_job
+from .watchdog import WatchdogSupervisor, parse_command
 
 _TRIGGER_PREFIX_RE = re.compile(
     r"^(?:(?:#broll|#hook)\b|(?:visual\s+hook\s+)?b-?roll\s*[:：]|storyboard\s*[:：]|shot\s*list\s*[:：]|shotlist\s*[:：])\s*",
@@ -53,16 +54,31 @@ def main(argv: list[str] | None = None) -> int:
         if not raw_text.strip():
             raise ValueError("Input script text is empty.")
 
+        cfg = load_config(args.config)
+        job_id = args.job_id or f"wa_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        cmd = parse_command(raw_text)
+        if cmd is not None:
+            action, target = cmd
+            reply = WatchdogSupervisor(cfg).execute_command(action, target)
+            payload: dict[str, Any] = {
+                "ok": True,
+                "mode": "watchdog",
+                "job_id": job_id,
+                "whatsapp_message": reply,
+                "whatsapp_image_caption": "",
+                "storyboard_path": None,
+            }
+            print(json.dumps(payload, ensure_ascii=False))
+            return 0
+
         cleaned_script, is_news = strip_whatsapp_trigger(raw_text)
         if not cleaned_script:
             raise ValueError("Script text is empty after stripping trigger prefix.")
 
-        cfg = load_config(args.config)
         if args.output_dir:
             cfg.output_dir = Path(args.output_dir)
         cfg.output_dir.mkdir(parents=True, exist_ok=True)
-
-        job_id = args.job_id or f"wa_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         if is_news:
             manifest = run_news_package(

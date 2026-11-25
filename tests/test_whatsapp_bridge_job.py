@@ -177,6 +177,22 @@ class TestWhatsappBridgeJob(unittest.TestCase):
             self.assertIsNone(res["storyboard_path"])
             self.assertTrue((Path(res["resolve_package_dir"]) / "resolve_markers.json").exists())
 
+    def test_main_watchdog_help_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            cfg_file = root / "config.json"
+            cfg_file.write_text(json.dumps({"input_dir": str(root / "in"), "output_dir": str(root / "out")}), encoding="utf-8")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc = main(["--text", "#help", "--config", str(cfg_file), "--job-id", "wa_cmd_help"])
+            self.assertEqual(rc, 0)
+            last_line = [ln for ln in buf.getvalue().splitlines() if ln.strip()][-1]
+            res = json.loads(last_line)
+            self.assertTrue(res["ok"])
+            self.assertEqual(res["mode"], "watchdog")
+            self.assertIn("#status", res["whatsapp_message"])
+            self.assertIn("#update", res["whatsapp_message"])
+
 
 if __name__ == "__main__":
     unittest.main()

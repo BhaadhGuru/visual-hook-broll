@@ -26,12 +26,13 @@ It automatically:
 
 ---
 
-## Step 3: Import & turn ON the n8n workflow (2 minutes)
-1. Open **n8n** → click **Workflows** → **Import from File**.
-2. Pick **`workflows/n8n_whatsapp_broll_workflow.json`** from your **Google Drive** `AI stuff/visual-hook-broll/workflows/` folder (the Google Drive copy already has your `BrollInput` and `BrollOutput` folder IDs filled in!).
-3. Select your existing **Google Drive** credential on nodes **3, 5, 7, 10, 11**.
-4. Select your existing **WhatsApp** credential and **Phone Number ID** on nodes **1, 4, 9, 12**.
-5. Click **Save**, then toggle **Active → ON** (top-right switch).
+## Step 3: Connect WhatsApp (100% Free — Local QR Bridge)
+No n8n, Zapier, or paid cloud subscription needed:
+1. Double-click **`START_WHATSAPP_BRIDGE.bat`** inside your `visual-hook-broll` folder.
+2. The first time it opens, scan the **WhatsApp QR code** in the window using your phone (**WhatsApp → Settings → Linked Devices → Link a Device**).
+3. Leave it running — you can now text yourself directly on WhatsApp!
+
+*(Alternative: if you run self-hosted **n8n** locally, import `workflows/n8n_whatsapp_broll_workflow.json` from Google Drive `AI stuff/visual-hook-broll/workflows/`.)*
 
 ---
 

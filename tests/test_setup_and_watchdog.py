@@ -222,6 +222,33 @@ class WatchdogTests(unittest.TestCase):
             self.assertTrue(ctrl.is_running(sup.services["broll"]))
             self.assertTrue(ctrl.is_running(sup.services["yap"]))
 
+    def test_whatsapp_update_command(self) -> None:
+        self.assertEqual(parse_command("#update"), ("#update", "all"))
+        self.assertTrue(_is_watchdog_command("#update"))
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "SETUP.bat").write_text("@echo off\n", encoding="utf-8")
+            backup_dir = tmp / "drive_backups"
+            cfg, ctrl, sup = self._make_supervisor(tmp, running={"broll", "stream"})
+            cfg.watchdog.bat_backup_dir = str(backup_dir)
+            called = []
+            sup.updater = lambda root: (called.append(root) or True, "git pull OK (Already up to date.)")
+            cfg.input_dir.mkdir(parents=True)
+            (cfg.input_dir / "wa_upd.json").write_text(
+                json.dumps({"job_id": "wa_upd", "sender": "15559990000", "script": "#update"}),
+                encoding="utf-8",
+            )
+
+            res = sup.tick()
+            self.assertEqual(res["commands_handled"], 1)
+            self.assertEqual(len(called), 1)
+            self.assertTrue((backup_dir / "SETUP.bat").exists())
+            self.assertIn(("stop", "broll"), ctrl.events)
+            self.assertIn(("start", "broll"), ctrl.events)
+            out = json.loads((cfg.output_dir / "wa_upd_result.json").read_text(encoding="utf-8"))
+            self.assertIn("Update complete", out["whatsapp_message"])
+            self.assertIn("Restarted B-Roll Worker", out["whatsapp_message"])
+
 
 if __name__ == "__main__":
     unittest.main()

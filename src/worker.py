@@ -30,7 +30,7 @@ def _is_news_script(text: str) -> bool:
 
 def _is_watchdog_command(text: str) -> bool:
     first = text.strip().lower().split(None, 1)[0] if text.strip() else ""
-    return first in {"#start", "#restart", "#stop", "#status", "#help"}
+    return first in {"#start", "#restart", "#stop", "#status", "#update", "#help"}
 
 
 def _is_file_stable(path: Path, wait_seconds: float = 0.4) -> bool:

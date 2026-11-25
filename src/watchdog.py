@@ -12,22 +12,26 @@ Provides three safety nets:
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
 import time
+import urllib.request
+import zipfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
 
 from .config import AppConfig, load_config
-from .setup_detect import detect_comfyui, detect_ollama
+from .setup_detect import backup_bat_scripts, detect_comfyui, detect_ollama
 
 
-CONTROL_COMMANDS = {"#start", "#restart", "#stop", "#status", "#help"}
+GITHUB_ARCHIVE_URL = "https://github.com/BhaadhGuru/visual-hook-broll/archive/refs/heads/main.zip"
+CONTROL_COMMANDS = {"#start", "#restart", "#stop", "#status", "#update", "#help"}
 SERVICE_ALIASES = {
     "all": "all",
     "broll": "broll",
@@ -172,15 +176,61 @@ def build_service_specs(cfg: AppConfig) -> dict[str, ServiceSpec]:
     }
 
 
+def pull_latest_from_github(project_root: Path, archive_url: str = GITHUB_ARCHIVE_URL) -> tuple[bool, str]:
+    """Update project_root from GitHub via git pull (if git repo) or ZIP download (if unzipped)."""
+    git_dir = project_root / ".git"
+    if git_dir.exists():
+        try:
+            proc = subprocess.run(
+                ["git", "pull", "--ff-only", "origin", "main"],
+                cwd=str(project_root),
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=False,
+            )
+            if proc.returncode == 0:
+                summary = (proc.stdout.strip().splitlines() or ["Updated"])[-1]
+                return True, f"git pull OK ({summary})"
+            return False, f"git pull failed: {(proc.stderr or proc.stdout).strip()[:200]}"
+        except Exception as exc:
+            return False, f"git pull error: {exc}"
+
+    protected = {"config.json", ".env"}
+    try:
+        req = urllib.request.Request(archive_url, headers={"User-Agent": "visual-hook-broll-watchdog"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            raw_zip = resp.read()
+        with zipfile.ZipFile(io.BytesIO(raw_zip)) as zf:
+            updated_count = 0
+            for member in zf.infolist():
+                if member.is_dir():
+                    continue
+                parts = Path(member.filename).parts
+                if len(parts) < 2:
+                    continue
+                rel = Path(*parts[1:])
+                if rel.parts[0] in {".venv", "venv", ".git"} or rel.name in protected:
+                    continue
+                dest = project_root / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                with zf.open(member) as src_f, open(dest, "wb") as dst_f:
+                    shutil.copyfileobj(src_f, dst_f)
+                updated_count += 1
+        return True, f"Downloaded & extracted {updated_count} file(s) from GitHub"
+    except Exception as exc:
+        return False, f"ZIP update failed: {exc}"
+
+
 def parse_command(text: str) -> tuple[str, str] | None:
-    """Parse '#start all', '#restart stream', '#stop stream', '#status', '#help'."""
+    """Parse '#start all', '#restart stream', '#stop stream', '#status', '#update', '#help'."""
     parts = text.strip().split()
     if not parts:
         return None
     action = parts[0].lower()
     if action not in CONTROL_COMMANDS:
         return None
-    if action in {"#status", "#help"}:
+    if action in {"#status", "#help", "#update"}:
         return action, "all"
     raw_target = parts[1].lower() if len(parts) > 1 else "all"
     target = SERVICE_ALIASES.get(raw_target, raw_target)
@@ -197,11 +247,13 @@ class WatchdogSupervisor:
         *,
         ollama_probe=detect_ollama,
         comfy_probe=detect_comfyui,
+        updater=pull_latest_from_github,
     ) -> None:
         self.cfg = cfg
         self.controller = controller or WindowsProcessController()
         self.ollama_probe = ollama_probe
         self.comfy_probe = comfy_probe
+        self.updater = updater
         self.services = build_service_specs(cfg)
         self.manually_stopped: set[str] = set()
         self.last_sender: str = cfg.watchdog.notify_phone
@@ -250,16 +302,43 @@ class WatchdogSupervisor:
 
         ollama = self.ollama_probe(self.cfg.ollama.base_url)
         comfy = self.comfy_probe(self.cfg.comfyui.base_url)
-        lines.append(
-            f"{'🟢' if ollama.get('reachable') else '🔴'} Ollama: "
-            f"{ollama.get('selected_model') or 'Reachable' if ollama.get('reachable') else 'Offline'}"
-        )
-        lines.append(
-            f"{'🟢' if comfy.get('reachable') else '🔴'} ComfyUI: "
-            f"{comfy.get('layout', 'Reachable') if comfy.get('reachable') else 'Offline'}"
-        )
+        o_ok = ollama.get("reachable") if isinstance(ollama, dict) else getattr(ollama, "reachable", False)
+        o_model = ollama.get("selected_model") if isinstance(ollama, dict) else getattr(ollama, "selected_model", "")
+        c_ok = comfy.get("reachable") if isinstance(comfy, dict) else getattr(comfy, "reachable", False)
+        c_layout_obj = comfy.get("layout", "Reachable") if isinstance(comfy, dict) else getattr(comfy, "layout", "Reachable")
+        c_layout = c_layout_obj if isinstance(c_layout_obj, str) else getattr(c_layout_obj, "layout", "Reachable")
+        lines.append(f"{'🟢' if o_ok else '🔴'} Ollama: {o_model or 'Reachable' if o_ok else 'Offline'}")
+        lines.append(f"{'🟢' if c_ok else '🔴'} ComfyUI: {c_layout if c_ok else 'Offline'}")
         lines.append("")
-        lines.append("Commands: `#status`, `#start all`, `#restart stream`, `#restart yap`, `#restart broll`, `#stop stream`")
+        lines.append(
+            "Commands: `#status`, `#start all`, `#restart stream`, `#restart yap`, `#restart broll`, `#stop stream`, `#update`"
+        )
+        return "\n".join(lines)
+
+    def _run_self_update(self) -> str:
+        ok, detail = self.updater(self.cfg.project_root)
+        if not ok:
+            return f"⚠️ Update failed: {detail}"
+
+        lines = [f"✅ *Update complete:* {detail}"]
+        backup_dir_str = self.cfg.watchdog.bat_backup_dir
+        if backup_dir_str:
+            try:
+                copied = backup_bat_scripts(
+                    self.cfg.project_root,
+                    Path(backup_dir_str),
+                    [self.cfg.watchdog.yap_bat, self.cfg.watchdog.mediamtx_bat],
+                )
+                if copied:
+                    lines.append(f"💾 Backed up {len(copied)} `.bat` script(s) to Google Drive.")
+            except Exception as exc:
+                lines.append(f"⚠️ `.bat` backup skipped: {exc}")
+
+        broll_spec = self.services["broll"]
+        if broll_spec.command_path and "broll" not in self.manually_stopped:
+            self.controller.stop(broll_spec)
+            rok, rmsg = self.controller.start(broll_spec, self.cfg.project_root)
+            lines.append(f"{'🔄' if rok else '⚠️'} Restarted B-Roll Worker" if rok else f"⚠️ {rmsg}")
         return "\n".join(lines)
 
     def execute_command(self, action: str, target: str) -> str:
@@ -269,10 +348,13 @@ class WatchdogSupervisor:
                 "• `#status` — Check B-Roll, Yap, MediaMTX, Ollama & ComfyUI\n"
                 "• `#start all` (or `broll` / `yap` / `stream`) — Start if not running\n"
                 "• `#restart all` (or `broll` / `yap` / `stream`) — Force-restart\n"
-                "• `#stop stream` (or `broll` / `yap` / `all`) — Stop service"
+                "• `#stop stream` (or `broll` / `yap` / `all`) — Stop service\n"
+                "• `#update` — Pull latest code from GitHub, back up `.bat` scripts, restart B-Roll"
             )
         if action == "#status":
             return self.format_status()
+        if action == "#update":
+            return self._run_self_update()
 
         keys = ["broll", "yap", "stream"] if target == "all" else [target]
         unknown = [k for k in keys if k not in self.services]

@@ -131,11 +131,11 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         checkpoint_name=os.environ.get(
             "FLUX_CHECKPOINT", comfy_raw.get("checkpoint_name", "flux1-dev-fp8.safetensors")
         ),
-        unet_name=comfy_raw.get("unet_name", ""),
-        weight_dtype=comfy_raw.get("weight_dtype", "default"),
-        clip_l_name=comfy_raw.get("clip_l_name", "clip_l.safetensors"),
-        t5_name=comfy_raw.get("t5_name", "t5xxl_fp8_e4m3fn.safetensors"),
-        vae_name=comfy_raw.get("vae_name", "ae.safetensors"),
+        unet_name=os.environ.get("FLUX_UNET", comfy_raw.get("unet_name", "")),
+        weight_dtype=os.environ.get("FLUX_WEIGHT_DTYPE", comfy_raw.get("weight_dtype", "default")),
+        clip_l_name=os.environ.get("FLUX_CLIP_L", comfy_raw.get("clip_l_name", "clip_l.safetensors")),
+        t5_name=os.environ.get("FLUX_T5", comfy_raw.get("t5_name", "t5xxl_fp8_e4m3fn.safetensors")),
+        vae_name=os.environ.get("FLUX_VAE", comfy_raw.get("vae_name", "ae.safetensors")),
         width=int(comfy_raw.get("width", 1024)),
         height=int(comfy_raw.get("height", 576)),
         steps=int(comfy_raw.get("steps", 20)),

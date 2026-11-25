@@ -49,6 +49,7 @@ Text yourself on WhatsApp:
 | `#restart stream` | Force-restarts MediaMTX Livestream if it freezes |
 | `#restart yap` / `#restart broll` / `#restart all` | Force-restarts one or all workers |
 | `#stop stream` | Stops MediaMTX remotely (pauses auto-restart until `#start stream`) |
+| `#update` | Pulls the latest code from GitHub, backs up `.bat` scripts to Drive, and restarts B-Roll |
 | `#help` | Lists all commands |
 
 > **Hands-free crash protection:** Even if you don't text anything, the Watchdog automatically restarts **MediaMTX** within ~5 seconds if it crashes, and auto-launches **B-Roll** or **Yap** whenever a script lands in `BrollInput` or `YapInput`.

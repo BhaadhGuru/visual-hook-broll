@@ -1,14 +1,15 @@
 <#
 .SYNOPSIS
-    Registers a Windows Scheduled Task so the BrollInput -> BrollOutput GPU worker starts automatically at logon.
+    Registers a Windows Scheduled Task so the Watchdog (B-Roll, Yap, MediaMTX)
+    starts automatically at logon and auto-restarts on failure.
 #>
 [CmdletBinding()]
 param(
-    [string]$TaskName = "VisualHookBrollWorker"
+    [string]$TaskName = "VisualHookBrollWatchdog"
 )
 
 $ErrorActionPreference = "Stop"
-$StartScript = (Resolve-Path "$PSScriptRoot\start_worker.ps1").Path
+$StartScript = (Resolve-Path "$PSScriptRoot\start_watchdog.ps1").Path
 
 $Action = New-ScheduledTaskAction `
     -Execute "powershell.exe" `
@@ -28,5 +29,6 @@ Register-ScheduledTask `
     -Settings $Settings `
     -Force | Out-Null
 
-Write-Host "Registered Scheduled Task '$TaskName' -> $StartScript" -ForegroundColor Green
-Write-Host "Start it now with: Start-ScheduledTask -TaskName $TaskName" -ForegroundColor Cyan
+Write-Host "Installed Scheduled Task '$TaskName' -> $StartScript" -ForegroundColor Green
+Write-Host "It will start automatically at logon (supervising B-Roll, Yap, and MediaMTX)." -ForegroundColor Cyan
+Write-Host "To run it right now: Start-ScheduledTask -TaskName '$TaskName'" -ForegroundColor Yellow

@@ -15,7 +15,7 @@
     "workflow_template": "comfyui_workflows/flux_dev_fp8_api.json",
     "checkpoint_name": "flux1-dev-fp8.safetensors",
     "unet_name": "",
-    "weight_dtype": "fp8_e4m3fn",
+    "weight_dtype": "default",
     "clip_l_name": "clip_l.safetensors",
     "t5_name": "t5xxl_fp8_e4m3fn.safetensors",
     "vae_name": "ae.safetensors",
@@ -48,5 +48,16 @@
     "resolve_watch_dir": "D:\\ResolveWatch\\NewsPackages",
     "yap_output_dir": "G:\\My Drive\\YapOutput",
     "auto_run_veo": false
+  },
+  "watchdog": {
+    "broll_bat": "START_BROLL.bat",
+    "yap_bat": "",
+    "mediamtx_bat": "",
+    "yap_input_dir": "G:\\My Drive\\YapInput",
+    "mediamtx_auto_restart": true,
+    "auto_start_on_boot": true,
+    "poll_interval_seconds": 5.0,
+    "notify_phone": "",
+    "bat_backup_dir": "G:\\My Drive\\AI stuff\\visual-hook-broll\\bat_backups"
   }
 }

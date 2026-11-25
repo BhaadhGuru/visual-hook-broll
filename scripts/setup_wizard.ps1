@@ -1,143 +1,119 @@
 <#
 .SYNOPSIS
-    Zero-config Windows setup wizard for Visual Hook B-Roll.
-    Creates .venv, installs Pillow, auto-detects Google Drive / Ollama / ComfyUI Flux,
-    writes config.json, runs offline self-tests + live health check, and optionally
-    registers auto-start at Windows logon.
+    Zero-config interactive setup wizard for Visual Hook B-Roll + PC Studio Watchdog.
+    Double-click SETUP.bat to run this.
 #>
-[CmdletBinding()]
-param(
-    [switch]$NonInteractive,
-    [switch]$SkipSelfTest
-)
-
 $ErrorActionPreference = "Stop"
 $ProjectRoot = (Resolve-Path "$PSScriptRoot\..").Path
 $VenvDir = Join-Path $ProjectRoot ".venv"
 $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
 $ConfigPath = Join-Path $ProjectRoot "config.json"
 
+Write-Host ""
 Write-Host "=====================================================" -ForegroundColor Cyan
-Write-Host "  Visual Hook B-Roll - Windows Zero-Config Setup" -ForegroundColor Cyan
+Write-Host "  Visual Hook B-Roll + PC Studio Watchdog Setup" -ForegroundColor Cyan
 Write-Host "=====================================================" -ForegroundColor Cyan
 Write-Host ""
 
-# 1. Locate a real Python 3 interpreter
-$PythonExe = $null
-$PythonArgsPrefix = @()
-$prevEAP = $ErrorActionPreference
-$ErrorActionPreference = "Continue"
-try {
-    foreach ($candidate in @(
-        @{ Cmd = "python"; Prefix = @() },
-        @{ Cmd = "py"; Prefix = @("-3") },
-        @{ Cmd = "python3"; Prefix = @() }
-    )) {
-        $found = Get-Command $candidate.Cmd -ErrorAction SilentlyContinue
-        if ($found) {
-            try {
-                $ver = & $found.Source @($candidate.Prefix) -c "import sys; print(f'{sys.version_info[0]}.{sys.version_info[1]}')" 2>$null
-                if ($LASTEXITCODE -eq 0 -and $ver -match "^3\.") {
-                    $PythonExe = $found.Source
-                    $PythonArgsPrefix = $candidate.Prefix
-                    Write-Host "[OK]   Python $ver found -> $PythonExe" -ForegroundColor Green
-                    break
-                }
-            } catch {
-                continue
-            }
-        }
-    }
-} finally {
-    $ErrorActionPreference = $prevEAP
-}
-
-if (-not $PythonExe) {
-    Write-Host "[FAIL] Python 3.10+ was not found in PATH." -ForegroundColor Red
-    Write-Host "       Install Python from https://www.python.org/downloads/ and check 'Add python.exe to PATH'." -ForegroundColor Yellow
+# 1. Check Python & set up .venv
+Write-Host "[1/5] Checking Python environment..." -ForegroundColor Yellow
+$pyCmd = Get-Command python -ErrorAction SilentlyContinue
+if (-not $pyCmd) {
+    Write-Host "ERROR: Python was not found in PATH. Install Python 3.10+ from python.org and check 'Add Python to PATH'." -ForegroundColor Red
     exit 1
 }
 
-# 2. Create .venv & install Pillow (only external runtime dependency)
 if (-not (Test-Path $VenvPython)) {
-    Write-Host "[INFO] Creating virtual environment in .venv..." -ForegroundColor Cyan
-    & $PythonExe @PythonArgsPrefix -m venv $VenvDir
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[FAIL] Failed to create .venv." -ForegroundColor Red
-        exit 1
-    }
+    Write-Host "      Creating virtual environment (.venv)..." -ForegroundColor Gray
+    python -m venv $VenvDir
 }
-
-$hasPil = & $VenvPython -c "import importlib.util; print('1' if importlib.util.find_spec('PIL') else '0')"
-if ($LASTEXITCODE -ne 0 -or $hasPil.Trim() -ne "1") {
-    Write-Host "[INFO] Installing Python dependencies from requirements.txt..." -ForegroundColor Cyan
-    $prevEAP = $ErrorActionPreference
-    $ErrorActionPreference = "Continue"
-    try {
-        & $VenvPython -m pip install --upgrade pip
-        & $VenvPython -m pip install -r (Join-Path $ProjectRoot "requirements.txt")
-        $pipExit = $LASTEXITCODE
-    } finally {
-        $ErrorActionPreference = $prevEAP
-    }
-    if ($pipExit -ne 0) {
-        Write-Host "[FAIL] Failed to install dependencies from requirements.txt." -ForegroundColor Red
-        exit 1
-    }
-} else {
-    Write-Host "[OK]   .venv and Pillow are ready." -ForegroundColor Green
-}
-
-# 3. Auto-detect Google Drive folders, Ollama model, and ComfyUI Flux layout -> config.json
+Write-Host "      Installing required package (Pillow)..." -ForegroundColor Gray
+& $VenvPython -m pip install --quiet --upgrade pip
+& $VenvPython -m pip install --quiet -r (Join-Path $ProjectRoot "requirements.txt")
+Write-Host "      Python environment ready." -ForegroundColor Green
 Write-Host ""
-Write-Host "[INFO] Running auto-detection (Drive, Ollama, ComfyUI Flux)..." -ForegroundColor Cyan
+
+# 2. Auto-detect Google Drive, Ollama, ComfyUI Flux, Yap & MediaMTX
+Write-Host "[2/5] Auto-detecting Google Drive, Ollama, ComfyUI Flux, Yap & MediaMTX..." -ForegroundColor Yellow
 Push-Location $ProjectRoot
 try {
-    & $VenvPython -m src.setup_detect --config $ConfigPath --create-dirs
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "[FAIL] Auto-detection failed with exit code $LASTEXITCODE." -ForegroundColor Red
-        exit $LASTEXITCODE
-    }
-
-    # 4. Safe offline self-test suite (never writes into real Google Drive folders)
-    if (-not $SkipSelfTest) {
-        Write-Host ""
-        Write-Host "[INFO] Running offline unit & pipeline self-tests..." -ForegroundColor Cyan
-        $prevEAP = $ErrorActionPreference
-        $ErrorActionPreference = "Continue"
-        try {
-            & $VenvPython -m unittest discover -s tests
-            $testExit = $LASTEXITCODE
-        } finally {
-            $ErrorActionPreference = $prevEAP
-        }
-        if ($testExit -ne 0) {
-            Write-Host "[FAIL] Offline self-test suite failed." -ForegroundColor Red
-            exit $testExit
-        }
-        Write-Host "[OK]   All offline self-tests passed." -ForegroundColor Green
-    }
+    & $VenvPython -m src.setup_detect --write
 } finally {
     Pop-Location
 }
-
-# 5. Live preflight health summary
 Write-Host ""
-& "$PSScriptRoot\check_health.ps1" -ConfigPath $ConfigPath
 
-# 6. Optional logon auto-start registration
-if (-not $NonInteractive) {
-    Write-Host ""
-    $reply = Read-Host "Register Windows logon auto-start task for START_BROLL worker? (y/N)"
-    if ($reply -match "^(y|yes)$") {
-        & "$PSScriptRoot\install_scheduled_task.ps1"
-    } else {
-        Write-Host "[INFO] Skipped Scheduled Task registration. You can run .\scripts\install_scheduled_task.ps1 anytime." -ForegroundColor Cyan
+# 3. Offer drag-and-drop path entry if Yap or MediaMTX wasn't auto-found
+$cfg = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+$updatedExtra = $false
+
+if (-not $cfg.watchdog.yap_bat) {
+    Write-Host "[3/5] Yap .bat was not found automatically." -ForegroundColor Yellow
+    $yapInput = Read-Host "      Drag & drop your Yap .bat file here (or press Enter to skip for now)"
+    $yapClean = $yapInput.Trim().Trim('"')
+    if ($yapClean) {
+        $cfg.watchdog.yap_bat = $yapClean
+        $updatedExtra = $true
     }
+}
+if (-not $cfg.watchdog.mediamtx_bat) {
+    Write-Host "[3/5] MediaMTX .bat / .exe was not found automatically." -ForegroundColor Yellow
+    $mtxInput = Read-Host "      Drag & drop your MediaMTX .bat or mediamtx.exe here (or press Enter to skip for now)"
+    $mtxClean = $mtxInput.Trim().Trim('"')
+    if ($mtxClean) {
+        $cfg.watchdog.mediamtx_bat = $mtxClean
+        $updatedExtra = $true
+    }
+}
+if ($updatedExtra) {
+    $cfg | ConvertTo-Json -Depth 10 | Set-Content -Path $ConfigPath -Encoding UTF8
+    Push-Location $ProjectRoot
+    try {
+        & $VenvPython -m src.setup_detect --write
+    } finally {
+        Pop-Location
+    }
+}
+Write-Host ""
+
+# 4. Health check & optional self-test
+Write-Host "[4/5] Running health check..." -ForegroundColor Yellow
+& (Join-Path $PSScriptRoot "check_health.ps1") -ConfigPath $ConfigPath
+Write-Host ""
+
+$runTest = Read-Host "Run a quick self-test now using the AMA TechTel example script? (Y/n)"
+if ($runTest -eq "" -or $runTest -match "^[Yy]") {
+    $testInput = Join-Path $cfg.input_dir "setup_self_test_ama.txt"
+    $exampleFile = Join-Path $ProjectRoot "examples\ama_techtel_card_reader.txt"
+    if (Test-Path $exampleFile) {
+        Copy-Item $exampleFile $testInput -Force
+        Write-Host "      Dropped test script -> $testInput" -ForegroundColor Cyan
+        Write-Host "      Processing one job (this may take 30-90 seconds on GPU)..." -ForegroundColor Cyan
+        Push-Location $ProjectRoot
+        try {
+            & $VenvPython -m src.worker --config $ConfigPath --once
+        } finally {
+            Pop-Location
+        }
+        Write-Host "      Check output folder: $($cfg.output_dir)" -ForegroundColor Green
+    }
+}
+Write-Host ""
+
+# 5. Install Windows auto-start Scheduled Task (Watchdog)
+Write-Host "[5/5] Auto-start at Windows login + WhatsApp remote control" -ForegroundColor Yellow
+$installTask = Read-Host "Install the always-on Watchdog so B-Roll, Yap & MediaMTX start at login and respond to WhatsApp commands? (Y/n)"
+if ($installTask -eq "" -or $installTask -match "^[Yy]") {
+    & (Join-Path $PSScriptRoot "install_scheduled_task.ps1")
+    Write-Host "      Starting Watchdog in the background now..." -ForegroundColor Cyan
+    Start-ScheduledTask -TaskName "VisualHookBrollWatchdog" -ErrorAction SilentlyContinue
 }
 
 Write-Host ""
 Write-Host "=====================================================" -ForegroundColor Green
-Write-Host "  Setup complete! Config saved to: config.json" -ForegroundColor Green
-Write-Host "  Next step: Double-click START_BROLL.bat to launch." -ForegroundColor Green
+Write-Host "  ALL DONE!" -ForegroundColor Green
 Write-Host "=====================================================" -ForegroundColor Green
+Write-Host "  - Double-click START_BROLL.bat anytime to watch B-Roll live." -ForegroundColor White
+Write-Host "  - Double-click START_WATCHDOG.bat anytime to watch the supervisor live." -ForegroundColor White
+Write-Host "  - WhatsApp commands: #status, #start all, #restart stream, #restart yap, #restart broll" -ForegroundColor White
+Write-Host ""

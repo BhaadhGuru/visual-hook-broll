@@ -23,7 +23,7 @@ class ComfyUIConfig:
     workflow_template: str = "comfyui_workflows/flux_dev_fp8_api.json"
     checkpoint_name: str = "flux1-dev-fp8.safetensors"
     unet_name: str = ""
-    weight_dtype: str = "fp8_e4m3fn"
+    weight_dtype: str = "default"
     clip_l_name: str = "clip_l.safetensors"
     t5_name: str = "t5xxl_fp8_e4m3fn.safetensors"
     vae_name: str = "ae.safetensors"
@@ -63,6 +63,19 @@ class NewsEngineConfig:
 
 
 @dataclass
+class WatchdogConfig:
+    broll_bat: str = "START_BROLL.bat"
+    yap_bat: str = ""
+    mediamtx_bat: str = ""
+    yap_input_dir: Path = Path("./YapInput")
+    mediamtx_auto_restart: bool = True
+    auto_start_on_boot: bool = True
+    poll_interval_seconds: float = 5.0
+    notify_phone: str = ""
+    bat_backup_dir: str = ""
+
+
+@dataclass
 class AppConfig:
     input_dir: Path = Path("./BrollInput")
     output_dir: Path = Path("./BrollOutput")
@@ -73,6 +86,7 @@ class AppConfig:
     comfyui: ComfyUIConfig = field(default_factory=ComfyUIConfig)
     storyboard: StoryboardConfig = field(default_factory=StoryboardConfig)
     news_engine: NewsEngineConfig = field(default_factory=NewsEngineConfig)
+    watchdog: WatchdogConfig = field(default_factory=WatchdogConfig)
 
     def resolve_workflow_path(self) -> Path:
         candidate = Path(self.comfyui.workflow_template)
@@ -99,6 +113,7 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
     comfy_raw = raw.get("comfyui", {})
     sb_raw = raw.get("storyboard", {})
     news_raw = raw.get("news_engine", {})
+    wd_raw = raw.get("watchdog", {})
 
     ollama_cfg = OllamaConfig(
         base_url=os.environ.get("OLLAMA_BASE_URL", ollama_raw.get("base_url", "http://127.0.0.1:11434")),
@@ -116,11 +131,11 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         checkpoint_name=os.environ.get(
             "FLUX_CHECKPOINT", comfy_raw.get("checkpoint_name", "flux1-dev-fp8.safetensors")
         ),
-        unet_name=os.environ.get("FLUX_UNET", comfy_raw.get("unet_name", "")),
-        weight_dtype=os.environ.get("FLUX_WEIGHT_DTYPE", comfy_raw.get("weight_dtype", "fp8_e4m3fn")),
-        clip_l_name=os.environ.get("FLUX_CLIP_L", comfy_raw.get("clip_l_name", "clip_l.safetensors")),
-        t5_name=os.environ.get("FLUX_T5", comfy_raw.get("t5_name", "t5xxl_fp8_e4m3fn.safetensors")),
-        vae_name=os.environ.get("FLUX_VAE", comfy_raw.get("vae_name", "ae.safetensors")),
+        unet_name=comfy_raw.get("unet_name", ""),
+        weight_dtype=comfy_raw.get("weight_dtype", "default"),
+        clip_l_name=comfy_raw.get("clip_l_name", "clip_l.safetensors"),
+        t5_name=comfy_raw.get("t5_name", "t5xxl_fp8_e4m3fn.safetensors"),
+        vae_name=comfy_raw.get("vae_name", "ae.safetensors"),
         width=int(comfy_raw.get("width", 1024)),
         height=int(comfy_raw.get("height", 576)),
         steps=int(comfy_raw.get("steps", 20)),
@@ -156,6 +171,18 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         auto_run_veo=bool(news_raw.get("auto_run_veo", False)),
     )
 
+    wd_cfg = WatchdogConfig(
+        broll_bat=wd_raw.get("broll_bat", "START_BROLL.bat"),
+        yap_bat=os.environ.get("YAP_BAT", wd_raw.get("yap_bat", "")),
+        mediamtx_bat=os.environ.get("MEDIAMTX_BAT", wd_raw.get("mediamtx_bat", "")),
+        yap_input_dir=Path(os.environ.get("YAP_INPUT_DIR", wd_raw.get("yap_input_dir", "./YapInput"))),
+        mediamtx_auto_restart=bool(wd_raw.get("mediamtx_auto_restart", True)),
+        auto_start_on_boot=bool(wd_raw.get("auto_start_on_boot", True)),
+        poll_interval_seconds=float(wd_raw.get("poll_interval_seconds", 5.0)),
+        notify_phone=os.environ.get("WATCHDOG_NOTIFY_PHONE", wd_raw.get("notify_phone", "")),
+        bat_backup_dir=wd_raw.get("bat_backup_dir", ""),
+    )
+
     input_dir = Path(os.environ.get("BROLL_INPUT_DIR", raw.get("input_dir", "./BrollInput")))
     output_dir = Path(os.environ.get("BROLL_OUTPUT_DIR", raw.get("output_dir", "./BrollOutput")))
     archive_dir = Path(os.environ.get("BROLL_ARCHIVE_DIR", raw.get("archive_dir", str(input_dir / "_processed"))))
@@ -170,4 +197,5 @@ def load_config(config_path: str | Path | None = None) -> AppConfig:
         comfyui=comfy_cfg,
         storyboard=sb_cfg,
         news_engine=news_cfg,
+        watchdog=wd_cfg,
     )

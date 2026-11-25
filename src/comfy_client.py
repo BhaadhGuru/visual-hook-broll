@@ -29,10 +29,10 @@ def render_workflow_template(
     checkpoint_name: str,
     filename_prefix: str,
     unet_name: str = "",
-    weight_dtype: str = "fp8_e4m3fn",
-    clip_l_name: str = "clip_l.safetensors",
-    t5_name: str = "t5xxl_fp8_e4m3fn.safetensors",
-    vae_name: str = "ae.safetensors",
+    weight_dtype: str = "default",
+    clip_l_name: str = "",
+    t5_name: str = "",
+    vae_name: str = "",
 ) -> dict[str, Any]:
     """Deep-substitute placeholder tokens inside an exported ComfyUI API workflow dict."""
     replacements: dict[str, Any] = {
@@ -44,12 +44,12 @@ def render_workflow_template(
         "{{CFG}}": cfg,
         "{{GUIDANCE}}": guidance,
         "{{CHECKPOINT}}": checkpoint_name,
+        "{{FILENAME_PREFIX}}": filename_prefix,
         "{{UNET}}": unet_name,
         "{{WEIGHT_DTYPE}}": weight_dtype,
         "{{CLIP_L}}": clip_l_name,
         "{{T5}}": t5_name,
         "{{VAE}}": vae_name,
-        "{{FILENAME_PREFIX}}": filename_prefix,
     }
 
     def _walk(node: Any) -> Any:

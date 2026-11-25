@@ -28,6 +28,11 @@ def _is_news_script(text: str) -> bool:
     return "#news" in text.lower()
 
 
+def _is_watchdog_command(text: str) -> bool:
+    first = text.strip().lower().split(None, 1)[0] if text.strip() else ""
+    return first in {"#start", "#restart", "#stop", "#status", "#help"}
+
+
 def _is_file_stable(path: Path, wait_seconds: float = 0.4) -> bool:
     """Wait briefly to ensure Google Drive / rclone finished writing the dropped file."""
     try:
@@ -73,6 +78,14 @@ def process_once(cfg: AppConfig, *, mock_comfy: bool = False) -> int:
     processed = 0
     for path in candidates:
         if not _is_file_stable(path):
+            continue
+
+        try:
+            job_id, script_text, sender, chat_id, message_id = _load_incoming_job(path)
+        except Exception:
+            job_id, script_text, sender, chat_id, message_id = path.stem, "", "", "", ""
+
+        if _is_watchdog_command(script_text):
             continue
 
         print(f"[worker] Picked up {path.name}")

@@ -76,6 +76,21 @@ def main(argv: list[str] | None = None) -> int:
         if not cleaned_script:
             raise ValueError("Script text is empty after stripping trigger prefix.")
 
+        cmd = parse_command(cleaned_script)
+        if cmd is not None:
+            action, target = cmd
+            reply = WatchdogSupervisor(cfg).execute_command(action, target)
+            payload = {
+                "ok": True,
+                "mode": "watchdog",
+                "job_id": job_id,
+                "whatsapp_message": reply,
+                "whatsapp_image_caption": "",
+                "storyboard_path": None,
+            }
+            print(json.dumps(payload, ensure_ascii=False))
+            return 0
+
         if args.output_dir:
             cfg.output_dir = Path(args.output_dir)
         cfg.output_dir.mkdir(parents=True, exist_ok=True)
